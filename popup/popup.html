@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fields Autofill</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Fields Autofill</h1>
+      <p class="subtitle">Manage your saved field values</p>
+    </header>
+
+    <div class="tabs">
+      <button class="tab-button active" data-tab="current">Current Page</button>
+      <button class="tab-button" data-tab="all">All Sites</button>
+    </div>
+
+    <div class="tab-content" id="current-tab">
+      <div class="page-info">
+        <span id="current-url">Loading...</span>
+      </div>
+      
+      <div class="fields-list" id="current-fields">
+        <div class="loading">Loading saved fields...</div>
+      </div>
+      
+      <div class="actions">
+        <button id="clear-page-btn" class="btn btn-danger">Clear Page Data</button>
+      </div>
+    </div>
+
+    <div class="tab-content hidden" id="all-tab">
+      <div class="sites-list" id="all-sites">
+        <div class="loading">Loading all sites...</div>
+      </div>
+      
+      <div class="actions">
+        <button id="clear-all-btn" class="btn btn-danger">Clear All Data</button>
+      </div>
+    </div>
+
+    <footer class="footer">
+      <p>Right-click on any input field and select "Autofill" to save values</p>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
