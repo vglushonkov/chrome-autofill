@@ -184,6 +184,31 @@ body {
   font-size: 11px;
   color: #5f6368;
   line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+}
+
+.footer-link {
+  font-size: 10px;
+  color: #1a73e8;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: #1557b0;
+  text-decoration: underline;
+}
+
+.separator {
+  font-size: 10px;
+  color: #dadce0;
 }
 
 .loading {
