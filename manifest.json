@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Fields Autofill",
-  "version": "1.0.0",
-  "description": "Save and automatically fill form fields. Personal autofill for each website with clean UI and smart badge indicator.",
+  "version": "1.0.2",
+  "description": "Save and automatically fill form fields. Smart field recognition for dynamic forms. Clean UI and reliable autofill.",
   
   "permissions": [
     "activeTab",
@@ -23,6 +23,7 @@
       "matches": ["<all_urls>"],
       "js": [
         "utils/field-identifier.js",
+        "utils/field-selector.js",
         "storage/storage.js",
         "content/content.js"
       ],

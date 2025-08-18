@@ -142,9 +142,32 @@ class PopupManager {
       return;
     }
 
-    const fieldsHtml = Object.entries(pageData).map(([fieldId, value], index) => `
+    const fieldsHtml = Object.entries(pageData).map(([fieldId, fieldData], index) => {
+      // Handle both legacy strings and new object format
+      const isAdvancedFormat = typeof fieldData === 'object' && fieldData !== null;
+      
+      // Extract the actual value
+      const value = isAdvancedFormat ? fieldData.value : fieldData;
+      
+      // Generate friendly name from selectors if available
+      let friendlyName = fieldId;
+      if (isAdvancedFormat && fieldData.selectors) {
+        // Try to generate a human-readable field name
+        if (fieldData.selectors.primary) {
+          const match = fieldData.selectors.primary.match(/\[(name|aria-label|placeholder|type)="([^"]+)"\]/i);
+          if (match) {
+            friendlyName = `${match[1]}: ${match[2]}`;
+          }
+        }
+        
+        // Add confidence indicator
+        const confidence = fieldData.confidence ? Math.round(fieldData.confidence * 100) : '?';
+        friendlyName += ` (${confidence}% match)`;
+      }
+      
+      return `
       <div class="field-item" data-field-id="${this.escapeHtml(fieldId)}">
-        <div class="field-id">${this.escapeHtml(fieldId)}</div>
+        <div class="field-id">${this.escapeHtml(friendlyName)}</div>
         <div class="field-value">${this.escapeHtml(value)}</div>
         <div class="field-actions">
           <button class="btn btn-small btn-primary edit-field-btn" data-field-id="${this.escapeHtml(fieldId)}" data-current-value="${this.escapeHtml(value)}">
@@ -155,7 +178,8 @@ class PopupManager {
           </button>
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
 
     container.innerHTML = fieldsHtml;
     
@@ -361,7 +385,16 @@ class PopupManager {
       const result = await chrome.storage.local.get([url]);
       const pageData = result[url] || {};
       
-      pageData[fieldId] = value;
+      // Check if using advanced format (object with value property)
+      if (typeof pageData[fieldId] === 'object' && pageData[fieldId] !== null && pageData[fieldId].value !== undefined) {
+        // Update only the value property and increment use count
+        pageData[fieldId].value = value;
+        pageData[fieldId].last_used = Date.now();
+        pageData[fieldId].use_count = (pageData[fieldId].use_count || 0) + 1;
+      } else {
+        // Legacy format - direct string value
+        pageData[fieldId] = value;
+      }
       
       await chrome.storage.local.set({
         [url]: pageData
