@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Fields Test - Fields Autofill Extension</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f4f8;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #2563eb;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            margin-bottom: 40px;
+            padding: 20px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+        
+        .test-section h3 {
+            color: #1e40af;
+            margin-top: 0;
+            border-bottom: 2px solid #3b82f6;
+            padding-bottom: 10px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #374151;
+        }
+        
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #d1d5db;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus, select:focus {
+            border-color: #3b82f6;
+            outline: none;
+        }
+        
+        button {
+            background-color: #3b82f6;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #2563eb;
+        }
+        
+        .instructions {
+            background-color: #ecfdf5;
+            border: 1px solid #10b981;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .instructions h4 {
+            color: #047857;
+            margin-top: 0;
+        }
+        
+        .dynamic-field {
+            background-color: #fef3c7;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .stable-field {
+            background-color: #dbeafe;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .counter {
+            background-color: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            padding: 10px;
+            margin-top: 10px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Dynamic Fields Test - Enhanced Selectors</h1>
+        
+        <div class="instructions">
+            <h4>Инструкция по тестированию:</h4>
+            <ol>
+                <li><strong>Сохраните значения</strong> в поля с помощью контекстного меню (ПКМ → Autofill)</li>
+                <li><strong>Добавьте динамические поля</strong> кнопками ниже</li>
+                <li><strong>Обновите страницу</strong> - все поля должны автозаполниться</li>
+                <li><strong>Проверьте разные сценарии</strong> - смена порядка, новые ID, изменение классов</li>
+            </ol>
+        </div>
+
+        <!-- Test 1: Stable Fields -->
+        <div class="test-section">
+            <h3>1. Стабильные поля (должны работать отлично)</h3>
+            <div class="stable-field">
+                <div class="form-group">
+                    <label for="stable-email">Email (стабильный ID и name):</label>
+                    <input type="email" id="stable-email" name="email" placeholder="your.email@example.com" aria-label="Email address">
+                </div>
+                
+                <div class="form-group">
+                    <label for="stable-name">Имя (стабильные атрибуты):</label>
+                    <input type="text" id="stable-name" name="fullName" placeholder="Ваше полное имя" data-field="name">
+                </div>
+                
+                <div class="form-group">
+                    <label for="stable-phone">Телефон (с aria-label):</label>
+                    <input type="tel" id="stable-phone" name="phone" placeholder="+7 (000) 000-00-00" aria-label="Phone number">
+                </div>
+            </div>
+        </div>
+
+        <!-- Test 2: Dynamic ID Fields -->
+        <div class="test-section">
+            <h3>2. Динамические ID (тест fuzzy matching)</h3>
+            <div class="dynamic-field" id="dynamic-container">
+                <div class="form-group">
+                    <label>Email с динамическим ID:</label>
+                    <input type="email" id="user-email-12345" name="userEmail" placeholder="email@domain.com" class="email-field">
+                </div>
+                
+                <div class="form-group">
+                    <label>Пароль с динамическим ID:</label>
+                    <input type="password" id="pwd-67890" name="password" placeholder="Введите пароль" class="pwd-input">
+                </div>
+            </div>
+            
+            <button onclick="regenerateDynamicIds()">🔄 Пересоздать с новыми ID</button>
+            <button onclick="changeClasses()">🎨 Изменить классы</button>
+        </div>
+
+        <!-- Test 3: Position-based Fields -->
+        <div class="test-section">
+            <h3>3. Поля с изменяющейся позицией</h3>
+            <div id="position-container">
+                <div class="form-group">
+                    <label>Поле 1 (может менять позицию):</label>
+                    <input type="text" name="field1" placeholder="Первое поле" class="position-field">
+                </div>
+                
+                <div class="form-group">
+                    <label>Поле 2 (может менять позицию):</label>
+                    <input type="text" name="field2" placeholder="Второе поле" class="position-field">
+                </div>
+                
+                <div class="form-group">
+                    <label>Поле 3 (может менять позицию):</label>
+                    <input type="text" name="field3" placeholder="Третье поле" class="position-field">
+                </div>
+            </div>
+            
+            <button onclick="shuffleFields()">🔀 Перемешать порядок полей</button>
+            <button onclick="addFieldBetween()">➕ Добавить поле между</button>
+        </div>
+
+        <!-- Test 4: Contextual Fields -->
+        <div class="test-section">
+            <h3>4. Контекстные поля (по label и форме)</h3>
+            <form class="user-registration-form">
+                <fieldset>
+                    <legend>Регистрация пользователя</legend>
+                    
+                    <div class="form-group">
+                        <label>Логин пользователя:</label>
+                        <input type="text" placeholder="Введите логин">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Пароль для входа:</label>
+                        <input type="password" placeholder="Пароль">
+                    </div>
+                </fieldset>
+            </form>
+            
+            <form class="contact-form" style="margin-top: 20px;">
+                <fieldset>
+                    <legend>Контактная информация</legend>
+                    
+                    <div class="form-group">
+                        <label>Рабочий email:</label>
+                        <input type="email" placeholder="work@company.com">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Мобильный телефон:</label>
+                        <input type="tel" placeholder="Мобильный номер">
+                    </div>
+                </fieldset>
+            </form>
+        </div>
+
+        <!-- Test 5: Dynamically Added Fields -->
+        <div class="test-section">
+            <h3>5. Динамически добавляемые поля</h3>
+            <div id="dynamic-form-container">
+                <!-- Поля будут добавляться сюда -->
+            </div>
+            
+            <button onclick="addEmailField()">📧 Добавить email поле</button>
+            <button onclick="addPhoneField()">📞 Добавить телефон поле</button>
+            <button onclick="addCustomField()">✏️ Добавить произвольное поле</button>
+            <button onclick="clearDynamicFields()">🗑️ Очистить все</button>
+        </div>
+
+        <div class="counter" id="field-counter">
+            Всего полей на странице: <span id="total-fields">0</span>
+        </div>
+    </div>
+
+    <script>
+        let dynamicCounter = 0;
+        let fieldCounter = 0;
+        
+        // Update field counter
+        function updateFieldCounter() {
+            const fields = document.querySelectorAll('input, textarea, select');
+            document.getElementById('total-fields').textContent = fields.length;
+        }
+        
+        // Test 2: Dynamic ID regeneration
+        function regenerateDynamicIds() {
+            const container = document.getElementById('dynamic-container');
+            const emailField = container.querySelector('input[type="email"]');
+            const passwordField = container.querySelector('input[type="password"]');
+            
+            // Generate new random IDs
+            emailField.id = `user-email-${Math.floor(Math.random() * 99999)}`;
+            passwordField.id = `pwd-${Math.floor(Math.random() * 99999)}`;
+            
+            console.log('Generated new IDs:', emailField.id, passwordField.id);
+        }
+        
+        function changeClasses() {
+            const container = document.getElementById('dynamic-container');
+            const emailField = container.querySelector('input[type="email"]');
+            const passwordField = container.querySelector('input[type="password"]');
+            
+            // Change classes to dynamic ones
+            emailField.className = `email-field-${Math.floor(Math.random() * 1000)}`;
+            passwordField.className = `pwd-input-${Math.floor(Math.random() * 1000)}`;
+            
+            console.log('Changed classes:', emailField.className, passwordField.className);
+        }
+        
+        // Test 3: Position shuffling
+        function shuffleFields() {
+            const container = document.getElementById('position-container');
+            const fields = Array.from(container.children);
+            
+            // Shuffle array
+            for (let i = fields.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [fields[i], fields[j]] = [fields[j], fields[i]];
+            }
+            
+            // Re-append in new order
+            fields.forEach(field => container.appendChild(field));
+            console.log('Fields shuffled');
+        }
+        
+        function addFieldBetween() {
+            const container = document.getElementById('position-container');
+            const newField = document.createElement('div');
+            newField.className = 'form-group';
+            newField.innerHTML = `
+                <label>Новое поле (вставлено):</label>
+                <input type="text" name="inserted-${Date.now()}" placeholder="Вставленное поле" class="position-field">
+            `;
+            
+            // Insert at random position
+            const children = container.children;
+            const randomIndex = Math.floor(Math.random() * children.length);
+            container.insertBefore(newField, children[randomIndex]);
+            
+            updateFieldCounter();
+        }
+        
+        // Test 5: Dynamic field addition
+        function addEmailField() {
+            const container = document.getElementById('dynamic-form-container');
+            dynamicCounter++;
+            
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'form-group dynamic-field';
+            fieldDiv.innerHTML = `
+                <label>Динамический Email #${dynamicCounter}:</label>
+                <input type="email" 
+                       id="dyn-email-${dynamicCounter}-${Date.now()}" 
+                       name="dynamicEmail${dynamicCounter}" 
+                       placeholder="dynamic.email${dynamicCounter}@test.com"
+                       class="dynamic-email-${dynamicCounter}"
+                       data-counter="${dynamicCounter}">
+            `;
+            
+            container.appendChild(fieldDiv);
+            updateFieldCounter();
+        }
+        
+        function addPhoneField() {
+            const container = document.getElementById('dynamic-form-container');
+            dynamicCounter++;
+            
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'form-group dynamic-field';
+            fieldDiv.innerHTML = `
+                <label>Динамический Телефон #${dynamicCounter}:</label>
+                <input type="tel" 
+                       id="dyn-phone-${dynamicCounter}-${Math.random().toString(36).substr(2, 9)}" 
+                       name="dynamicPhone${dynamicCounter}" 
+                       placeholder="+7 (999) 123-45-67"
+                       class="dynamic-phone phone-field-${dynamicCounter}"
+                       data-counter="${dynamicCounter}">
+            `;
+            
+            container.appendChild(fieldDiv);
+            updateFieldCounter();
+        }
+        
+        function addCustomField() {
+            const container = document.getElementById('dynamic-form-container');
+            fieldCounter++;
+            
+            const fieldTypes = ['text', 'email', 'tel', 'password'];
+            const randomType = fieldTypes[Math.floor(Math.random() * fieldTypes.length)];
+            
+            const fieldDiv = document.createElement('div');
+            fieldDiv.className = 'form-group dynamic-field';
+            fieldDiv.innerHTML = `
+                <label>Произвольное поле #${fieldCounter} (${randomType}):</label>
+                <input type="${randomType}" 
+                       id="custom-${randomType}-${fieldCounter}-${Math.random().toString(36).substr(2, 5)}" 
+                       name="customField${fieldCounter}" 
+                       placeholder="Произвольное ${randomType} поле"
+                       class="custom-field-${fieldCounter} type-${randomType}"
+                       data-field-number="${fieldCounter}"
+                       data-field-type="${randomType}">
+            `;
+            
+            container.appendChild(fieldDiv);
+            updateFieldCounter();
+        }
+        
+        function clearDynamicFields() {
+            document.getElementById('dynamic-form-container').innerHTML = '';
+            dynamicCounter = 0;
+            fieldCounter = 0;
+            updateFieldCounter();
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateFieldCounter();
+            
+            // Add some initial dynamic fields
+            setTimeout(() => {
+                addEmailField();
+                addPhoneField();
+            }, 100);
+        });
+        
+        // Monitor field changes
+        setInterval(updateFieldCounter, 2000);
+        
+        // Prevent form submissions
+        document.addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Форма отправка отключена для тестирования!');
+        });
+    </script>
+</body>
+</html>
