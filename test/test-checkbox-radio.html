@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkbox and Radio Test - Fields Autofill</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .form-group {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        
+        .form-group h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #007cba;
+            padding-bottom: 5px;
+        }
+        
+        .field-row {
+            margin: 10px 0;
+        }
+        
+        label {
+            display: block;
+            margin: 5px 0;
+            cursor: pointer;
+        }
+        
+        input[type="checkbox"], input[type="radio"] {
+            margin-right: 8px;
+        }
+        
+        .checkbox-group, .radio-group {
+            margin-left: 20px;
+        }
+        
+        .reset-btn {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 3px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        
+        .status {
+            background: #e8f4fd;
+            border: 1px solid #007cba;
+            border-radius: 3px;
+            padding: 10px;
+            margin: 20px 0;
+        }
+        
+        .instructions {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            border-radius: 3px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        
+        .test-results {
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 3px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Checkbox and Radio Button Test Page</h1>
+    <p>This page tests the Fields Autofill extension with checkboxes and radio buttons.</p>
+    
+    <div class="instructions">
+        <h3>📋 Test Instructions:</h3>
+        <ol>
+            <li><strong>For checkboxes and radio buttons:</strong> Click on the field, then click the "📝 Autofill Focused Field" button in the extension popup</li>
+            <li><strong>For text inputs:</strong> Right-click on the input and select <strong>"FormFiller"</strong> from context menu</li>
+            <li>For checkboxes: enter <code>true</code>, <code>false</code>, <code>checked</code>, or <code>1</code>/<code>0</code></li>
+            <li>For radio buttons: enter the value you want to select</li>
+            <li>Refresh the page to test auto-filling</li>
+            <li>Test the popup interface to manage saved values</li>
+        </ol>
+    </div>
+
+    <form id="test-form">
+        <!-- Simple Checkboxes -->
+        <div class="form-group">
+            <h3>✅ Simple Checkboxes</h3>
+            
+            <div class="field-row">
+                <label>
+                    <input type="checkbox" id="accept-terms" name="accept-terms" value="yes">
+                    I accept the terms and conditions
+                </label>
+            </div>
+            
+            <div class="field-row">
+                <label>
+                    <input type="checkbox" id="subscribe-newsletter" name="subscribe" value="newsletter">
+                    Subscribe to newsletter
+                </label>
+            </div>
+            
+            <div class="field-row">
+                <label>
+                    <input type="checkbox" id="save-info" name="save_info" value="1">
+                    Save my information for next time
+                </label>
+            </div>
+        </div>
+
+        <!-- Grouped Checkboxes -->
+        <div class="form-group">
+            <h3>📦 Feature Selection (Multiple Checkboxes)</h3>
+            <p>Select features you want to enable:</p>
+            
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" name="features" value="dark-mode">
+                    Dark Mode
+                </label>
+                <label>
+                    <input type="checkbox" name="features" value="notifications">
+                    Push Notifications
+                </label>
+                <label>
+                    <input type="checkbox" name="features" value="analytics">
+                    Analytics Tracking
+                </label>
+                <label>
+                    <input type="checkbox" name="features" value="auto-save">
+                    Auto-save documents
+                </label>
+            </div>
+        </div>
+
+        <!-- Radio Button Groups -->
+        <div class="form-group">
+            <h3>📻 Payment Method (Radio Buttons)</h3>
+            <p>Choose your preferred payment method:</p>
+            
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="payment" value="credit-card">
+                    Credit Card
+                </label>
+                <label>
+                    <input type="radio" name="payment" value="paypal">
+                    PayPal
+                </label>
+                <label>
+                    <input type="radio" name="payment" value="bank-transfer">
+                    Bank Transfer
+                </label>
+                <label>
+                    <input type="radio" name="payment" value="crypto">
+                    Cryptocurrency
+                </label>
+            </div>
+        </div>
+
+        <!-- Size Selection -->
+        <div class="form-group">
+            <h3>👕 Size Selection</h3>
+            <p>Select your size:</p>
+            
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="size" value="xs">
+                    Extra Small (XS)
+                </label>
+                <label>
+                    <input type="radio" name="size" value="s">
+                    Small (S)
+                </label>
+                <label>
+                    <input type="radio" name="size" value="m">
+                    Medium (M)
+                </label>
+                <label>
+                    <input type="radio" name="size" value="l">
+                    Large (L)
+                </label>
+                <label>
+                    <input type="radio" name="size" value="xl">
+                    Extra Large (XL)
+                </label>
+            </div>
+        </div>
+
+        <!-- Priority Level -->
+        <div class="form-group">
+            <h3>⚡ Priority Level</h3>
+            <p>How urgent is this request?</p>
+            
+            <div class="radio-group">
+                <label>
+                    <input type="radio" name="priority" value="low" data-level="1">
+                    Low Priority
+                </label>
+                <label>
+                    <input type="radio" name="priority" value="medium" data-level="2">
+                    Medium Priority
+                </label>
+                <label>
+                    <input type="radio" name="priority" value="high" data-level="3">
+                    High Priority
+                </label>
+                <label>
+                    <input type="radio" name="priority" value="urgent" data-level="4">
+                    Urgent
+                </label>
+            </div>
+        </div>
+
+        <!-- Mixed with text fields -->
+        <div class="form-group">
+            <h3>🔗 Mixed Fields</h3>
+            
+            <div class="field-row">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" placeholder="Enter username">
+            </div>
+            
+            <div class="field-row">
+                <label>
+                    <input type="checkbox" id="remember-me" name="remember" value="true">
+                    Remember me
+                </label>
+            </div>
+            
+            <div class="field-row">
+                <label for="email">Email:</label>
+                <input type="email" id="email" name="email" placeholder="Enter email">
+            </div>
+        </div>
+    </form>
+
+    <!-- Test Controls -->
+    <div class="form-group">
+        <h3>🔧 Test Controls</h3>
+        <button type="button" class="reset-btn" onclick="resetForm()">Reset All Fields</button>
+        <button type="button" class="reset-btn" onclick="showCurrentValues()">Show Current Values</button>
+    </div>
+
+    <div class="status" id="status">
+        <strong>Status:</strong> Ready for testing. Try right-clicking on checkboxes and radio buttons!
+    </div>
+
+    <div class="test-results" id="results" style="display: none;">
+        <h4>Current Form Values:</h4>
+        <pre id="form-values"></pre>
+    </div>
+
+    <script>
+        function resetForm() {
+            document.getElementById('test-form').reset();
+            document.getElementById('status').innerHTML = '<strong>Status:</strong> Form reset. All fields cleared.';
+            document.getElementById('results').style.display = 'none';
+        }
+
+        function showCurrentValues() {
+            const form = document.getElementById('test-form');
+            const formData = new FormData(form);
+            const values = {};
+
+            // Get all form elements
+            const inputs = form.querySelectorAll('input');
+            inputs.forEach(input => {
+                if (input.type === 'checkbox') {
+                    values[`${input.name || input.id}_checkbox`] = input.checked;
+                } else if (input.type === 'radio') {
+                    if (input.checked) {
+                        values[`${input.name}_radio`] = input.value;
+                    }
+                } else {
+                    values[input.name || input.id] = input.value;
+                }
+            });
+
+            document.getElementById('form-values').textContent = JSON.stringify(values, null, 2);
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('status').innerHTML = '<strong>Status:</strong> Current values displayed below.';
+        }
+
+        // Add some interactivity
+        document.addEventListener('change', function(e) {
+            if (e.target.type === 'checkbox' || e.target.type === 'radio') {
+                const action = e.target.type === 'checkbox' 
+                    ? (e.target.checked ? 'checked' : 'unchecked')
+                    : `selected "${e.target.value}"`;
+                
+                document.getElementById('status').innerHTML = 
+                    `<strong>Status:</strong> ${e.target.name || e.target.id} ${action}`;
+            }
+        });
+
+        // Instructions for popup button testing
+        document.addEventListener('DOMContentLoaded', function() {
+            const instructions = document.createElement('div');
+            instructions.className = 'instructions';
+            instructions.innerHTML = `
+                <h3>💡 Additional Testing:</h3>
+                <p><strong>Test the "Autofill Focused Field" popup button:</strong></p>
+                <ol>
+                    <li>Click on any checkbox or radio button to focus it</li>
+                    <li>Open the extension popup (click the extension icon)</li>
+                    <li>Click "📝 Autofill Focused Field" button</li>
+                    <li>Enter your desired value in the dialog</li>
+                </ol>
+                <p><em>This tests the alternative method mentioned in your request!</em></p>
+            `;
+            document.querySelector('.instructions').after(instructions);
+        });
+    </script>
+</body>
+</html>

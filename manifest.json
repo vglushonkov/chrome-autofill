@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Fields Autofill",
-  "version": "1.0.2",
-  "description": "Save and automatically fill form fields. Smart field recognition for dynamic forms. Clean UI and reliable autofill.",
+  "name": "FormFiller",
+  "version": "1.1",
+  "description": "Set the value of any field on any page. It will be there next time you visit the page. It's that simple.",
   
   "permissions": [
     "activeTab",
@@ -33,7 +33,7 @@
   
   "action": {
     "default_popup": "popup/popup.html",
-    "default_title": "Fields Autofill",
+    "default_title": "FormFiller",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",

@@ -87,6 +87,30 @@ body {
   word-break: break-all;
 }
 
+.quick-actions {
+  background: #e8f5e9;
+  border: 1px solid #a5d6a7;
+  border-radius: 6px;
+  padding: 12px;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.quick-actions .btn {
+  width: 100%;
+  padding: 10px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.quick-actions .hint {
+  font-size: 11px;
+  color: #558b2f;
+  margin: 0;
+  line-height: 1.4;
+}
+
 .fields-list, .sites-list {
   margin-bottom: 16px;
 }
@@ -104,7 +128,90 @@ body {
   border-color: #4285f4;
 }
 
-.field-id, .site-url {
+.field-header {
+  margin-bottom: 8px;
+}
+
+.field-name {
+  font-weight: 600;
+  color: #1a73e8;
+  font-size: 13px;
+}
+
+.field-value-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.field-value {
+  flex: 1;
+  color: #333;
+  font-size: 13px;
+  padding: 6px 8px;
+  background: white;
+  border: 1px solid #e8eaed;
+  border-radius: 4px;
+  word-break: break-all;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+/* Checkbox and radio value styling */
+.checkbox-value.checked {
+  color: #1b5e20;
+  font-weight: 600;
+}
+
+.checkbox-value.unchecked {
+  color: #757575;
+}
+
+.radio-value {
+  color: #1565c0;
+  font-weight: 500;
+}
+
+/* Field type badge */
+.field-type-badge {
+  background: #e1f5fe;
+  color: #0277bd;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 12px;
+  margin-left: 8px;
+  font-weight: 500;
+  text-transform: uppercase;
+}
+
+.field-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.btn-icon {
+  background: none;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  opacity: 0.7;
+  transition: opacity 0.2s, transform 0.1s;
+  line-height: 1;
+}
+
+.btn-icon:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.btn-icon:active {
+  transform: scale(0.95);
+}
+
+.site-url {
   font-weight: 600;
   color: #1a73e8;
   font-size: 12px;
@@ -112,18 +219,7 @@ body {
   word-break: break-all;
 }
 
-.field-value {
-  color: #333;
-  font-size: 13px;
-  margin-bottom: 8px;
-  padding: 6px 8px;
-  background: white;
-  border: 1px solid #e8eaed;
-  border-radius: 4px;
-  word-break: break-all;
-}
-
-.field-actions, .site-actions {
+.site-actions {
   display: flex;
   gap: 8px;
 }

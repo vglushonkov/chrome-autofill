@@ -49,6 +49,11 @@ class PopupManager {
       });
     });
 
+    // Autofill focused field button
+    document.getElementById('autofill-focused-btn').addEventListener('click', () => {
+      this.autofillFocusedField();
+    });
+
     // Clear page data button
     document.getElementById('clear-page-btn').addEventListener('click', () => {
       this.clearPageData();
@@ -136,7 +141,7 @@ class PopupManager {
         <div class="empty">
           <div class="empty-icon">📝</div>
           <p>No saved fields for this page</p>
-          <p>Right-click on input fields to save values</p>
+          <p>Text inputs: Right-click → "FormFiller" | Checkboxes & Radio: Use "Autofill Focused Field" button above</p>
         </div>
       `;
       return;
@@ -149,33 +154,36 @@ class PopupManager {
       // Extract the actual value
       const value = isAdvancedFormat ? fieldData.value : fieldData;
       
-      // Generate friendly name from selectors if available
-      let friendlyName = fieldId;
-      if (isAdvancedFormat && fieldData.selectors) {
-        // Try to generate a human-readable field name
-        if (fieldData.selectors.primary) {
-          const match = fieldData.selectors.primary.match(/\[(name|aria-label|placeholder|type)="([^"]+)"\]/i);
-          if (match) {
-            friendlyName = `${match[1]}: ${match[2]}`;
-          }
-        }
-        
-        // Add confidence indicator
-        const confidence = fieldData.confidence ? Math.round(fieldData.confidence * 100) : '?';
-        friendlyName += ` (${confidence}% match)`;
-      }
+      // Generate friendly field name
+      const fieldName = this.generateFieldName(fieldId, fieldData, isAdvancedFormat);
+      
+      // Extract hash for advanced format fields
+      // For advanced format, the hash is the fieldId itself
+      const fieldHash = isAdvancedFormat ? fieldId : '';
+      
+      // Format value display for different field types
+      const displayValue = this.formatValueForDisplay(value, fieldData, isAdvancedFormat);
+      const fieldType = this.getFieldType(fieldData, isAdvancedFormat);
+      const fieldTypeIcon = this.getFieldTypeIcon(fieldType);
       
       return `
-      <div class="field-item" data-field-id="${this.escapeHtml(fieldId)}">
-        <div class="field-id">${this.escapeHtml(friendlyName)}</div>
-        <div class="field-value">${this.escapeHtml(value)}</div>
-        <div class="field-actions">
-          <button class="btn btn-small btn-primary edit-field-btn" data-field-id="${this.escapeHtml(fieldId)}" data-current-value="${this.escapeHtml(value)}">
-            Edit
-          </button>
-          <button class="btn btn-small btn-danger delete-field-btn" data-field-id="${this.escapeHtml(fieldId)}">
-            Delete
-          </button>
+      <div class="field-item" data-field-id="${this.escapeHtml(fieldId)}" data-field-hash="${this.escapeHtml(fieldHash)}">
+        <div class="field-header">
+          <div class="field-name">
+            ${fieldTypeIcon} ${this.escapeHtml(fieldName)}
+            ${fieldType !== 'text' ? `<span class="field-type-badge">${fieldType}</span>` : ''}
+          </div>
+        </div>
+        <div class="field-value-row">
+          <div class="field-value">${displayValue}</div>
+          <div class="field-actions">
+            <button class="btn-icon edit-field-btn" data-field-id="${this.escapeHtml(fieldId)}" data-current-value="${this.escapeHtml(value)}" title="Edit">
+              ✏️
+            </button>
+            <button class="btn-icon delete-field-btn" data-field-id="${this.escapeHtml(fieldId)}" title="Delete">
+              🗑️
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -185,6 +193,188 @@ class PopupManager {
     
     // Add event listeners for edit and delete buttons
     this.addFieldButtonListeners();
+    
+    // Add hover listeners for field highlighting
+    this.addFieldHoverListeners();
+  }
+
+  /**
+   * Generate friendly field name from field data
+   * @param {string} fieldId - Field ID
+   * @param {Object|string} fieldData - Field data
+   * @param {boolean} isAdvancedFormat - Whether using advanced format
+   * @returns {string} - Friendly field name
+   */
+  generateFieldName(fieldId, fieldData, isAdvancedFormat) {
+    if (!isAdvancedFormat) {
+      // Legacy format - try to extract from field ID
+      return this.extractNameFromFieldId(fieldId);
+    }
+
+    const selectors = fieldData.selectors;
+    if (!selectors) {
+      return this.extractNameFromFieldId(fieldId);
+    }
+
+    // Priority 1: Check for label text
+    if (selectors.fallback_attributes?.label_text) {
+      return this.capitalizeFirst(selectors.fallback_attributes.label_text);
+    }
+
+    // Priority 2: Check for aria-label
+    if (selectors.fallback_attributes?.aria_label) {
+      return this.capitalizeFirst(selectors.fallback_attributes.aria_label);
+    }
+
+    // Priority 3: Check for name attribute in primary selector
+    if (selectors.primary) {
+      const nameMatch = selectors.primary.match(/\[name="([^"]+)"\]/);
+      if (nameMatch) {
+        return this.humanizeFieldName(nameMatch[1]);
+      }
+    }
+
+    // Priority 4: Check for placeholder
+    if (selectors.fallback_attributes?.placeholder_pattern) {
+      const placeholder = selectors.fallback_attributes.placeholder_pattern.split('|')[0];
+      if (placeholder && placeholder.length > 2) {
+        return this.capitalizeFirst(placeholder);
+      }
+    }
+
+    // Priority 5: Check for type
+    if (selectors.fallback_attributes?.type) {
+      const type = selectors.fallback_attributes.type;
+      return this.humanizeFieldName(type);
+    }
+
+    // Fallback: Extract from field ID
+    return this.extractNameFromFieldId(fieldId);
+  }
+
+  /**
+   * Extract field name from legacy field ID
+   * @param {string} fieldId - Field ID
+   * @returns {string} - Extracted name
+   */
+  extractNameFromFieldId(fieldId) {
+    // Field ID format: input_type_id_name_placeholder_pos0
+    const parts = fieldId.split('_');
+    
+    // Try to find a meaningful part (not 'input', 'text', 'pos0', etc.)
+    for (let i = 1; i < parts.length - 1; i++) {
+      const part = parts[i];
+      if (part && part.length > 2 && !part.startsWith('pos') && part !== 'text' && part !== 'email' && part !== 'password') {
+        return this.humanizeFieldName(part);
+      }
+    }
+    
+    // Fallback to type
+    if (parts.length > 1) {
+      return this.humanizeFieldName(parts[1]);
+    }
+    
+    return 'Field';
+  }
+
+  /**
+   * Humanize field name (convert camelCase/snake_case to Title Case)
+   * @param {string} name - Field name
+   * @returns {string} - Humanized name
+   */
+  humanizeFieldName(name) {
+    return name
+      .replace(/([A-Z])/g, ' $1') // camelCase to spaces
+      .replace(/[_-]/g, ' ') // underscores/dashes to spaces
+      .trim()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(' ');
+  }
+
+  /**
+   * Capitalize first letter
+   * @param {string} str - String to capitalize
+   * @returns {string} - Capitalized string
+   */
+  capitalizeFirst(str) {
+    if (!str) return '';
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  /**
+   * Format value for display based on field type
+   * @param {*} value - Field value
+   * @param {Object|string} fieldData - Field data
+   * @param {boolean} isAdvancedFormat - Whether using advanced format
+   * @returns {string} - Formatted display value
+   */
+  formatValueForDisplay(value, fieldData, isAdvancedFormat) {
+    const fieldType = this.getFieldType(fieldData, isAdvancedFormat);
+    
+    if (fieldType === 'checkbox') {
+      const isChecked = this.parseCheckboxValue(value);
+      return `<span class="checkbox-value ${isChecked ? 'checked' : 'unchecked'}">
+        ${isChecked ? '☑️ Checked' : '☐ Unchecked'}
+      </span>`;
+    } else if (fieldType === 'radio') {
+      return `<span class="radio-value">📻 ${this.escapeHtml(String(value))}</span>`;
+    } else {
+      return this.escapeHtml(String(value));
+    }
+  }
+
+  /**
+   * Get field type from field data
+   * @param {Object|string} fieldData - Field data
+   * @param {boolean} isAdvancedFormat - Whether using advanced format
+   * @returns {string} - Field type
+   */
+  getFieldType(fieldData, isAdvancedFormat) {
+    if (!isAdvancedFormat) {
+      return 'text'; // Legacy format assumed text
+    }
+    
+    return fieldData.selectors?.fallback_attributes?.type || 'text';
+  }
+
+  /**
+   * Get field type icon
+   * @param {string} fieldType - Field type
+   * @returns {string} - Icon for field type
+   */
+  getFieldTypeIcon(fieldType) {
+    const icons = {
+      'text': '📝',
+      'email': '📧',
+      'password': '🔒',
+      'tel': '📞',
+      'url': '🌐',
+      'search': '🔍',
+      'number': '🔢',
+      'checkbox': '☐',
+      'radio': '📻',
+      'textarea': '📄',
+      'select': '📋'
+    };
+    
+    return icons[fieldType] || '📝';
+  }
+
+  /**
+   * Parse checkbox value to boolean
+   * @param {*} value - Value to parse
+   * @returns {boolean} - Parsed boolean
+   */
+  parseCheckboxValue(value) {
+    if (typeof value === 'boolean') {
+      return value;
+    }
+    if (typeof value === 'string') {
+      const lower = value.toLowerCase();
+      return lower === 'true' || lower === '1' || lower === 'checked';
+    }
+    return Boolean(value);
   }
 
   /**
@@ -271,17 +461,43 @@ class PopupManager {
    * @param {string} currentValue - Current field value
    */
   async editField(fieldId, currentValue) {
-    const newValue = prompt('Enter new value:', currentValue);
+    // Get field data to determine type
+    const currentUrl = this.getCurrentPageUrl(this.currentTab.url);
+    const result = await chrome.storage.local.get([currentUrl]);
+    const pageData = result[currentUrl] || {};
+    const fieldData = pageData[fieldId];
+    const isAdvancedFormat = typeof fieldData === 'object' && fieldData !== null;
+    const fieldType = this.getFieldType(fieldData, isAdvancedFormat);
+    
+    let promptMessage = 'Enter new value:';
+    let defaultValue = currentValue;
+    
+    if (fieldType === 'checkbox') {
+      promptMessage = 'Enter checkbox state (true/false, checked/unchecked, 1/0):';
+      const isChecked = this.parseCheckboxValue(currentValue);
+      defaultValue = isChecked ? 'true' : 'false';
+    } else if (fieldType === 'radio') {
+      promptMessage = 'Enter radio button value:';
+      if (isAdvancedFormat && fieldData.selectors?.fallback_attributes?.name) {
+        promptMessage += `\nRadio group: ${fieldData.selectors.fallback_attributes.name}`;
+      }
+    }
+    
+    const newValue = prompt(promptMessage, defaultValue);
     
     if (newValue !== null && this.currentTab) {
-      const currentUrl = this.getCurrentPageUrl(this.currentTab.url);
-      
       if (newValue.trim() === '') {
         // Remove field if empty
         await this.removeFieldFromStorage(currentUrl, fieldId);
       } else {
+        // For checkbox, convert to boolean if needed
+        let valueToStore = newValue;
+        if (fieldType === 'checkbox') {
+          valueToStore = this.parseCheckboxValue(newValue);
+        }
+        
         // Update field value
-        await this.updateFieldInStorage(currentUrl, fieldId, newValue);
+        await this.updateFieldInStorage(currentUrl, fieldId, valueToStore);
       }
       
       // Reload current page data
@@ -435,6 +651,91 @@ class PopupManager {
       return url.origin + url.pathname;
     } catch (error) {
       return fullUrl;
+    }
+  }
+
+  /**
+   * Autofill focused field on the page
+   */
+  async autofillFocusedField() {
+    if (!this.currentTab) return;
+    
+    try {
+      // Send message to content script to autofill focused field
+      await chrome.tabs.sendMessage(this.currentTab.id, {
+        action: 'autofillFocusedField'
+      });
+      
+      // Show feedback
+      const button = document.getElementById('autofill-focused-btn');
+      const originalText = button.textContent;
+      button.textContent = '✅ Done!';
+      button.disabled = true;
+      
+      setTimeout(() => {
+        button.textContent = originalText;
+        button.disabled = false;
+      }, 2000);
+      
+    } catch (error) {
+      console.error('Error autofilling focused field:', error);
+      alert('Error: Make sure you clicked on a field first!');
+    }
+  }
+
+  /**
+   * Add hover listeners for field highlighting
+   */
+  addFieldHoverListeners() {
+    const fieldItems = document.querySelectorAll('.field-item');
+    
+    fieldItems.forEach((fieldItem) => {
+      const fieldId = fieldItem.dataset.fieldId;
+      const fieldHash = fieldItem.dataset.fieldHash;
+      
+      fieldItem.addEventListener('mouseenter', () => {
+        this.highlightFieldOnPage(fieldId, fieldHash);
+      });
+      
+      fieldItem.addEventListener('mouseleave', () => {
+        this.removeHighlightFromPage();
+      });
+    });
+  }
+
+  /**
+   * Highlight field on the current page
+   * @param {string} fieldId - Field ID (legacy system)
+   * @param {string} fieldHash - Field hash (advanced system)
+   */
+  async highlightFieldOnPage(fieldId, fieldHash) {
+    if (!this.currentTab) return;
+    
+    try {
+      await chrome.tabs.sendMessage(this.currentTab.id, {
+        action: 'highlightField',
+        fieldId: fieldId,
+        hash: fieldHash
+      });
+    } catch (error) {
+      // Silent fail if content script is not ready
+      console.debug('Could not highlight field:', error);
+    }
+  }
+
+  /**
+   * Remove highlight from all fields on the page
+   */
+  async removeHighlightFromPage() {
+    if (!this.currentTab) return;
+    
+    try {
+      await chrome.tabs.sendMessage(this.currentTab.id, {
+        action: 'removeHighlight'
+      });
+    } catch (error) {
+      // Silent fail if content script is not ready
+      console.debug('Could not remove highlight:', error);
     }
   }
 

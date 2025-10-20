@@ -4,11 +4,11 @@
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Coming%20Soon-yellow.svg)](#)
 
-A Chrome extension that allows you to save and automatically fill input field values on websites with a clean, unobtrusive interface.
+A Chrome extension that allows you to save and automatically fill form field values (text inputs, checkboxes, radio buttons) on websites with a clean, unobtrusive interface.
 
 ## ✨ Features
 
-- ✅ "Autofill" context menu for any input field
+- ✅ "Autofill" context menu for any form field
 - ✅ Save values for specific fields on specific pages
 - ✅ Automatic filling of saved values when page loads
 - ✅ **🆕 Clean UI without field highlighting** - no more distracting glowing borders
@@ -33,10 +33,17 @@ A Chrome extension that allows you to save and automatically fill input field va
 
 ### Saving Field Values
 
-1. Navigate to any website with input fields
-2. Right-click on any input field
-3. Select "Autofill" from the context menu
-4. Enter the value you want to save for this field
+**For Text Inputs (input, textarea):**
+1. Navigate to any website with text fields
+2. Right-click on any text input or textarea
+3. Select "FormFiller" from the context menu
+4. Enter the value you want to save
+
+**For Checkboxes and Radio Buttons:**
+1. Click on the checkbox or radio button to focus it
+2. Click the extension icon and press "📝 Autofill Focused Field" button
+3. For checkboxes: enter `true`/`false`, `checked`/`unchecked`, or `1`/`0`
+4. For radio buttons: enter the value you want to select
 5. Click OK
 
 ### Automatic Filling
@@ -67,6 +74,8 @@ A Chrome extension that allows you to save and automatically fill input field va
 - `input[type="url"]`
 - `input[type="search"]`
 - `input[type="number"]`
+- `input[type="checkbox"]` - saves checked/unchecked state
+- `input[type="radio"]` - saves selected value in radio group
 - `textarea`
 - `select`
 
@@ -96,7 +105,7 @@ autofill/
 
 Each field gets a unique ID based on:
 - Element tag (`input`, `textarea`, `select`)
-- Field type (`text`, `email`, `password`, etc.)
+- Field type (`text`, `email`, `password`, `checkbox`, `radio`, etc.)
 - `id` attribute
 - `name` attribute
 - `placeholder` attribute (cleaned of spaces)
@@ -151,6 +160,7 @@ Data is saved in `chrome.storage.local` in the following format:
 ## Limitations
 
 - Does not work on internal Chrome pages (`chrome://`, `chrome-extension://`)
+- Does not work inside iframes (e.g., embedded forms on sites like w3schools.com)
 - Requires permission to access all websites
 - File input fields are not supported
 - Some websites may block automatic filling through CSP

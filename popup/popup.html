@@ -9,7 +9,7 @@
 <body>
   <div class="container">
     <header class="header">
-      <h1>Fields Autofill</h1>
+      <h1>FormFiller</h1>
       <p class="subtitle">Manage your saved field values</p>
     </header>
 
@@ -21,6 +21,11 @@
     <div class="tab-content" id="current-tab">
       <div class="page-info">
         <span id="current-url">Loading...</span>
+      </div>
+      
+      <div class="quick-actions">
+        <button id="autofill-focused-btn" class="btn btn-primary">📝 Autofill Focused Field</button>
+        <p class="hint">Click on any field, then use this button (works for all field types including checkboxes and radio buttons)</p>
       </div>
       
       <div class="fields-list" id="current-fields">
@@ -43,11 +48,13 @@
     </div>
 
     <footer class="footer">
-      <p>Right-click on any input field and select "Autofill" to save values</p>
+      <p>Text inputs: Right-click and select "FormFiller" | Checkboxes & Radio buttons: Use "Autofill Focused Field" button above</p>
       <div class="footer-links">
-        <a href="https://vglushonkov.github.io/chrome-autofill/privacy-policy.html" target="_blank" class="footer-link">Privacy Policy</a>
+        <a href="https://codecube01.store/autofill/privacy-policy" target="_blank" class="footer-link">Privacy Policy</a>
         <span class="separator">•</span>
-        <a href="https://vglushonkov.github.io/chrome-autofill/terms.html" target="_blank" class="footer-link">Terms of Service</a>
+        <a href="https://codecube01.store/autofill/terms" target="_blank" class="footer-link">Terms of Service</a>
+        <span class="separator">•</span>
+        <a href="https://codecube01.store/autofill#reach" target="_blank" class="footer-link">Send Feedback</a>
       </div>
     </footer>
   </div>

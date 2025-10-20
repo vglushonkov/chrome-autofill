@@ -45,6 +45,7 @@ coverage/
 .env.test
 .env.production
 
-# Documentation files (keep only README)
+# Documentation files (keep only README and STORE_DESCRIPTION)
 *.md
 !README.md
+!STORE_DESCRIPTION.md

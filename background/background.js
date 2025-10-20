@@ -54,15 +54,15 @@ class BackgroundService {
   createContextMenu() {
     // Remove existing menu item first
     chrome.contextMenus.removeAll(() => {
-      // Create new menu item
+      // Create menu item for editable fields only (input, textarea)
       chrome.contextMenus.create({
         id: this.contextMenuId,
-        title: 'Autofill',
+        title: 'FormFiller',
         contexts: ['editable'],
         documentUrlPatterns: ['http://*/*', 'https://*/*']
       });
       
-      console.log('Context menu created');
+      console.log('Context menu created for editable fields');
     });
   }
 

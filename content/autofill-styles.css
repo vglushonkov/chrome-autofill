@@ -10,3 +10,24 @@
 .fields-autofill-filling {
   /* Никаких анимаций */
 }
+
+/* Стили для подсветки полей при наведении в попапе */
+.fields-autofill-highlighted {
+  position: relative !important;
+  border-bottom: 2px solid #8e24aa !important;
+  box-shadow: 0 2px 10px rgba(142, 36, 170, 0.4) !important;
+  background: linear-gradient(to bottom, transparent 85%, rgba(142, 36, 170, 0.1) 85%) !important;
+  animation: fields-autofill-glow 1.5s ease-in-out infinite alternate !important;
+  z-index: 10000 !important;
+}
+
+@keyframes fields-autofill-glow {
+  0% {
+    border-bottom-color: #8e24aa;
+    box-shadow: 0 2px 10px rgba(142, 36, 170, 0.4);
+  }
+  100% {
+    border-bottom-color: #ba68c8;
+    box-shadow: 0 2px 15px rgba(186, 104, 200, 0.6), 0 0 20px rgba(142, 36, 170, 0.2);
+  }
+}

@@ -49,7 +49,7 @@ class FieldIdentifier {
    */
   static isInputField(element) {
     const validTags = ['INPUT', 'TEXTAREA', 'SELECT'];
-    const validTypes = ['text', 'email', 'password', 'tel', 'url', 'search', 'number'];
+    const validTypes = ['text', 'email', 'password', 'tel', 'url', 'search', 'number', 'checkbox', 'radio'];
     
     if (!validTags.includes(element.tagName)) {
       return false;
@@ -76,6 +76,8 @@ class FieldIdentifier {
       'input[type="url"]',
       'input[type="search"]',
       'input[type="number"]',
+      'input[type="checkbox"]',
+      'input[type="radio"]',
       'textarea',
       'select'
     ];

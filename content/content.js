@@ -74,6 +74,12 @@ class FieldsAutofill {
         this.showAutofillDialog();
       } else if (message.action === 'requestIconUpdate') {
         this.updateExtensionIcon();
+      } else if (message.action === 'autofillFocusedField') {
+        this.autofillFocusedField();
+      } else if (message.action === 'highlightField') {
+        this.highlightField(message.fieldId, message.hash);
+      } else if (message.action === 'removeHighlight') {
+        this.removeHighlight();
       }
     });
   }
@@ -89,6 +95,13 @@ class FieldsAutofill {
 
     const element = this.lastContextMenuTarget;
     
+    // Verify element is still a valid input field
+    if (!FieldSelector.isInputField(element)) {
+      console.log('Context menu triggered on non-input element, ignoring');
+      alert('FormFiller context menu works only with text inputs and textareas. For checkboxes and radio buttons, click on the field first, then use the "Autofill Focused Field" button in the extension popup.');
+      return;
+    }
+    
     try {
       // Generate selector preview for user
       const selectorPreview = this.generateSelectorPreview(element);
@@ -96,16 +109,52 @@ class FieldsAutofill {
       // Try to find existing value for this field
       const matches = await AutofillStorage.findMatchingFields();
       const existingMatch = matches.find(match => match.element === element);
-      const currentValue = existingMatch ? existingMatch.fieldData.value : '';
+      let currentValue;
+      
+      if (element.type === 'checkbox') {
+        currentValue = existingMatch ? existingMatch.fieldData.value : element.checked;
+      } else if (element.type === 'radio') {
+        currentValue = existingMatch ? existingMatch.fieldData.value : (element.checked ? element.value : '');
+      } else {
+        currentValue = existingMatch ? existingMatch.fieldData.value : (element.value || '');
+      }
+      
+      // Build prompt message
+      let promptMessage = `Enter value for this field:\n\n`;
+      promptMessage += `Selector preview: ${selectorPreview}\n`;
+      promptMessage += `Field type: ${element.type}\n`;
+      
+      // For select elements, show available options
+      if (element.tagName === 'SELECT') {
+        const options = Array.from(element.options)
+          .map(opt => `  - ${opt.value}${opt.text !== opt.value ? ` (${opt.text})` : ''}`)
+          .join('\n');
+        promptMessage += `Available options:\n${options}\n\n`;
+      } else if (element.type === 'checkbox') {
+        promptMessage += `For checkbox: enter 'true', 'false', '1', '0', 'checked', or 'unchecked'\n`;
+        promptMessage += `Current state: ${element.checked ? 'checked' : 'unchecked'}\n\n`;
+      } else if (element.type === 'radio') {
+        // Find all radio buttons in the same group
+        const radioGroup = document.querySelectorAll(`input[type="radio"][name="${element.name}"]`);
+        const options = Array.from(radioGroup)
+          .map(radio => `  - ${radio.value}${radio.checked ? ' (currently selected)' : ''}`)
+          .join('\n');
+        promptMessage += `Radio group "${element.name}":\n${options}\n`;
+        promptMessage += `Enter the value you want to select\n\n`;
+      }
+      
+      promptMessage += `Current value: ${currentValue || 'None'}\n`;
+      promptMessage += `Match confidence: ${existingMatch ? (existingMatch.confidence * 100).toFixed(0) + '%' : 'New field'}`;
       
       // Create and show enhanced dialog
-      const value = prompt(
-        `Enter value for this field:\n\n` +
-        `Selector preview: ${selectorPreview}\n` +
-        `Current value: ${currentValue || 'None'}\n` +
-        `Match confidence: ${existingMatch ? (existingMatch.confidence * 100).toFixed(0) + '%' : 'New field'}`,
-        currentValue || ''
-      );
+      let defaultValue;
+      if (element.type === 'checkbox') {
+        defaultValue = typeof currentValue === 'boolean' ? (currentValue ? 'true' : 'false') : (currentValue || 'false');
+      } else {
+        defaultValue = currentValue || '';
+      }
+      
+      const value = prompt(promptMessage, defaultValue);
 
       if (value !== null) {
         if (value.trim() === '') {
@@ -113,20 +162,15 @@ class FieldsAutofill {
           if (existingMatch) {
             await AutofillStorage.removeFieldByHash(existingMatch.hash);
           }
-          element.value = '';
-          element.classList.remove('fields-autofill-filled');
+          this.clearFieldValue(element);
         } else {
           // Save new value with advanced selectors
           const fieldHash = await AutofillStorage.saveFieldWithSelector(element, value);
-          element.value = value;
+          this.setFieldValue(element, value);
           
           // Mark field as filled and store hash for reference
           element.classList.add('fields-autofill-filled');
           element.dataset.autofillHash = fieldHash;
-          
-          // Trigger input events for frameworks
-          element.dispatchEvent(new Event('input', { bubbles: true }));
-          element.dispatchEvent(new Event('change', { bubbles: true }));
           
           console.log(`Saved field with hash: ${fieldHash}`);
         }
@@ -146,28 +190,96 @@ class FieldsAutofill {
    */
   async showLegacyAutofillDialog(element) {
     const fieldId = FieldIdentifier.generateFieldId(element);
-    const currentValue = await AutofillStorage.getFieldValue(fieldId);
+    const currentValue = await AutofillStorage.getFieldValue(fieldId) || element.value || '';
     
-    const value = prompt(
-      `Enter value for this field (legacy mode):\n\nField ID: ${fieldId}\nCurrent value: ${currentValue || 'None'}`,
-      currentValue || ''
-    );
+    let promptMessage = `Enter value for this field (legacy mode):\n\nField ID: ${fieldId}\n`;
+    
+    // For select elements, show available options
+    if (element.tagName === 'SELECT') {
+      const options = Array.from(element.options)
+        .map(opt => `  - ${opt.value}${opt.text !== opt.value ? ` (${opt.text})` : ''}`)
+        .join('\n');
+      promptMessage += `Available options:\n${options}\n\n`;
+    }
+    
+    promptMessage += `Current value: ${currentValue || 'None'}`;
+    
+    const value = prompt(promptMessage, currentValue || '');
 
     if (value !== null) {
       if (value.trim() === '') {
         await AutofillStorage.removeFieldValue(fieldId);
-        element.value = '';
-        element.classList.remove('fields-autofill-filled');
+        this.clearFieldValue(element);
       } else {
         await AutofillStorage.saveFieldValue(fieldId, value);
-        element.value = value;
+        this.setFieldValue(element, value);
         element.classList.add('fields-autofill-filled');
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-        element.dispatchEvent(new Event('change', { bubbles: true }));
       }
       
       this.updateExtensionIcon();
     }
+  }
+  
+  /**
+   * Set field value (works for input, textarea, select, checkbox, and radio)
+   */
+  setFieldValue(element, value) {
+    if (element.tagName === 'SELECT') {
+      // For select elements, try to find matching option
+      const option = Array.from(element.options).find(opt => 
+        opt.value === value || opt.text === value
+      );
+      
+      if (option) {
+        element.value = option.value;
+        console.log(`Successfully set select value: ${option.value}`);
+      } else {
+        console.warn(`Option not found for select: ${value}`, {
+          availableOptions: Array.from(element.options).map(opt => opt.value),
+          searchedValue: value
+        });
+        // Try to set value anyway (might work for some cases)
+        element.value = value;
+      }
+    } else if (element.type === 'checkbox') {
+      // For checkboxes, value should be boolean or string representation
+      if (typeof value === 'boolean') {
+        element.checked = value;
+      } else if (typeof value === 'string') {
+        element.checked = value.toLowerCase() === 'true' || value === '1' || value === 'checked';
+      } else {
+        element.checked = Boolean(value);
+      }
+    } else if (element.type === 'radio') {
+      // For radio buttons, only check if value matches
+      if (element.value === value) {
+        element.checked = true;
+      }
+    } else {
+      // For input and textarea
+      element.value = value;
+    }
+    
+    // Trigger events for frameworks
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+    element.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  
+  /**
+   * Clear field value (works for input, textarea, select, checkbox, and radio)
+   */
+  clearFieldValue(element) {
+    if (element.type === 'checkbox' || element.type === 'radio') {
+      element.checked = false;
+    } else {
+      element.value = '';
+    }
+    
+    element.classList.remove('fields-autofill-filled');
+    
+    // Trigger events for frameworks
+    element.dispatchEvent(new Event('input', { bubbles: true }));
+    element.dispatchEvent(new Event('change', { bubbles: true }));
   }
   
   /**
@@ -198,10 +310,23 @@ class FieldsAutofill {
       for (const match of matches) {
         const { element, fieldData, confidence, method, hash } = match;
         
-        // Only fill empty fields
-        if (element.value || element.classList.contains('fields-autofill-filled')) {
+        // Only fill empty fields or unchecked checkboxes/radios
+        if (element.classList.contains('fields-autofill-filled')) {
           continue;
         }
+        
+        // For text inputs, skip if already has value (but not for select elements)
+        if ((element.type !== 'checkbox' && element.type !== 'radio' && element.tagName !== 'SELECT') && element.value) {
+          continue;
+        }
+        
+        // For select elements, only skip if the current value matches what we want to set
+        if (element.tagName === 'SELECT' && element.value && element.value === fieldData.value) {
+          continue;
+        }
+        
+        // For checkboxes and radios, we can always auto-fill (overwrite current state)
+        // This allows users to set desired states via the extension
         
         // Apply confidence threshold (avoid very low confidence matches)
         if (confidence < 0.5) {
@@ -209,18 +334,23 @@ class FieldsAutofill {
           continue;
         }
         
-        // Fill the field
-        element.value = fieldData.value;
+        // Fill the field (handles input, textarea, and select)
+        if (element.tagName === 'SELECT') {
+          console.log(`Filling select element:`, {
+            id: element.id,
+            name: element.name,
+            currentValue: element.value,
+            newValue: fieldData.value,
+            options: Array.from(element.options).map(opt => ({ value: opt.value, text: opt.text }))
+          });
+        }
+        this.setFieldValue(element, fieldData.value);
         
         // Mark as filled and store hash
         element.classList.add('fields-autofill-filled');
         element.dataset.autofillHash = hash;
         element.dataset.autofillMethod = method;
         element.dataset.autofillConfidence = confidence.toFixed(2);
-        
-        // Trigger events for frameworks
-        element.dispatchEvent(new Event('input', { bubbles: true }));
-        element.dispatchEvent(new Event('change', { bubbles: true }));
         
         // Update usage statistics
         await AutofillStorage.updateFieldUsage(hash);
@@ -267,12 +397,13 @@ class FieldsAutofill {
         const savedValue = savedValues[fieldId];
         
         // Check if it's a string value (old format) and not object (new format)
-        if (savedValue && typeof savedValue === 'string' && !field.value) {
-          field.value = savedValue;
-          
-          // Trigger events for frameworks
-          field.dispatchEvent(new Event('input', { bubbles: true }));
-          field.dispatchEvent(new Event('change', { bubbles: true }));
+        const shouldFill = savedValue && typeof savedValue === 'string' && 
+          ((field.type !== 'checkbox' && field.type !== 'radio' && field.tagName !== 'SELECT' && !field.value) || 
+           (field.type === 'checkbox' || field.type === 'radio') ||
+           (field.tagName === 'SELECT' && (!field.value || field.value !== savedValue)));
+           
+        if (shouldFill) {
+          this.setFieldValue(field, savedValue);
           
           filledCount++;
           
@@ -322,6 +453,24 @@ class FieldsAutofill {
   }
 
   /**
+   * Autofill the currently focused field
+   */
+  async autofillFocusedField() {
+    const focusedElement = document.activeElement;
+    
+    if (!focusedElement || !FieldSelector.isInputField(focusedElement)) {
+      alert('Please click on a field (input, textarea, select, checkbox, or radio button) first!');
+      return;
+    }
+    
+    // Set this as the last context menu target
+    this.lastContextMenuTarget = focusedElement;
+    
+    // Show the autofill dialog
+    await this.showAutofillDialog();
+  }
+
+  /**
    * Observe for dynamically added fields
    */
   observeForNewFields() {
@@ -357,6 +506,109 @@ class FieldsAutofill {
       childList: true,
       subtree: true
     });
+  }
+
+  /**
+   * Highlight field on the page when hovering in popup
+   * @param {string} fieldId - Field identifier (legacy system)
+   * @param {string} hash - Field hash (advanced system)
+   */
+  async highlightField(fieldId, hash) {
+    // Remove any existing highlight first
+    this.removeHighlight();
+    
+    let targetElement = null;
+    
+    // Try to find field using advanced system (by hash)
+    if (hash) {
+      targetElement = this.findFieldByHash(hash);
+    }
+    
+    // Fallback to legacy system (by field ID)
+    if (!targetElement && fieldId) {
+      targetElement = this.findFieldByFieldId(fieldId);
+    }
+    
+    if (targetElement) {
+      // Add highlight class
+      targetElement.classList.add('fields-autofill-highlighted');
+      
+      // Scroll element into view if needed
+      targetElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+      });
+      
+      // Field highlighted successfully
+    } else {
+      console.warn('Field not found for highlighting:', { fieldId, hash });
+    }
+  }
+
+  /**
+   * Remove highlight from all fields
+   */
+  removeHighlight() {
+    const highlightedElements = document.querySelectorAll('.fields-autofill-highlighted');
+    highlightedElements.forEach(element => {
+      element.classList.remove('fields-autofill-highlighted');
+    });
+  }
+
+  /**
+   * Find field element by hash (advanced system)
+   * @param {string} hash - Field hash
+   * @returns {Element|null} - Found element or null
+   */
+  findFieldByHash(hash) {
+    // First try to find by stored hash in dataset
+    const elementWithHash = document.querySelector(`[data-autofill-hash="${hash}"]`);
+    if (elementWithHash) {
+      return elementWithHash;
+    }
+    
+    // If not found, try to match using selector system
+    // This is more expensive but handles cases where hash wasn't stored
+    try {
+      const inputFields = FieldSelector.getAllInputFields();
+      
+      for (const field of inputFields) {
+        // Generate field hash using same method as storage
+        const fieldSelector = FieldSelector.generateFieldSelector(field);
+        const fieldHash = fieldSelector.hash;
+        
+        if (fieldHash === hash) {
+          return field;
+        }
+      }
+    } catch (error) {
+      console.error('Error finding field by hash:', error);
+    }
+    
+    return null;
+  }
+
+  /**
+   * Find field element by field ID (legacy system)
+   * @param {string} fieldId - Field identifier
+   * @returns {Element|null} - Found element or null
+   */
+  findFieldByFieldId(fieldId) {
+    try {
+      const inputFields = FieldSelector.getAllInputFields();
+      
+      for (const field of inputFields) {
+        const currentFieldId = FieldIdentifier.generateFieldId(field);
+        if (currentFieldId === fieldId) {
+          return field;
+        }
+      }
+    } catch (error) {
+      console.error('Error finding field by fieldId:', error);
+    }
+    
+    return null;
   }
 }
 

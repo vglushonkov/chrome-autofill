@@ -211,6 +211,16 @@ class FieldSelector {
       position_hint: this.getPositionHint(element)
     };
     
+    // For checkbox and radio, add additional attributes
+    if (element.type === 'checkbox' || element.type === 'radio') {
+      attributes.value = element.value || null;
+      attributes.name = element.name || null;
+      // For radio buttons, the name groups them together
+      if (element.type === 'radio') {
+        attributes.radio_group = element.name;
+      }
+    }
+    
     // Get label text
     const label = this.findAssociatedLabel(element);
     if (label) {
@@ -469,6 +479,18 @@ class FieldSelector {
       }
     }
     
+    // Check value for checkbox/radio
+    if (attributes.value && (element.type === 'checkbox' || element.type === 'radio')) {
+      checks++;
+      if (element.value === attributes.value) score++;
+    }
+    
+    // Check name for radio groups
+    if (attributes.name && element.type === 'radio') {
+      checks++;
+      if (element.name === attributes.name) score++;
+    }
+    
     // Check required
     checks++;
     if (element.required === attributes.required) score++;
@@ -478,7 +500,7 @@ class FieldSelector {
   
   static isInputField(element) {
     const validTags = ['INPUT', 'TEXTAREA', 'SELECT'];
-    const validTypes = ['text', 'email', 'password', 'tel', 'url', 'search', 'number'];
+    const validTypes = ['text', 'email', 'password', 'tel', 'url', 'search', 'number', 'checkbox', 'radio'];
     
     if (!validTags.includes(element.tagName)) {
       return false;
@@ -504,6 +526,8 @@ class FieldSelector {
       'input[type="url"]',
       'input[type="search"]',
       'input[type="number"]',
+      'input[type="checkbox"]',
+      'input[type="radio"]',
       'textarea',
       'select'
     ];
